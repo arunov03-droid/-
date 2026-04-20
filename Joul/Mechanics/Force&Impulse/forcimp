@@ -1,0 +1,75 @@
+import streamlit as st
+import numpy as np
+import plotly.graph_objects as go
+
+# 1. Бет тақырыбы
+st.title("⚖️ Күш, Масса және Импульс")
+st.markdown("""
+Бұл бөлімде Ньютонның екінші заңы мен дененің импульсін зерттейміз.
+Формулалар: $F = ma$ және $P = mv$
+""")
+
+# 2. Параметрлерді енгізу (Sidebar)
+st.sidebar.header("Физикалық шамалар")
+mass = st.sidebar.number_input("Дене массасы (m), кг:", min_value=0.1, value=2.0, step=0.5)
+accel_current = st.sidebar.number_input("Үдеу (a), м/с²:", value=3.0, step=0.5)
+vel_current = st.sidebar.number_input("Жылдамдық (v), м/с:", value=5.0, step=0.5)
+
+# 3. Есептеулер
+F_current = mass * accel_current
+P_current = mass * vel_current
+
+# Графиктер үшін диапазондар
+a_range = np.linspace(0, 10, 100)
+v_range = np.linspace(0, 20, 100)
+F_range = mass * a_range
+P_range = mass * v_range
+
+# 4. Графиктерді шығару
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Күштің үдеуге тәуелділігі F(a)")
+    fig1 = go.Figure()
+    fig1.add_trace(go.Scatter(x=a_range, y=F_range, name="F = ma", line=dict(color='orange', width=3)))
+    fig1.add_trace(go.Scatter(x=[accel_current], y=[F_current], mode="markers", 
+                              marker=dict(color="black", size=10), name="Қазіргі күй"))
+    fig1.update_layout(xaxis_title="Үдеу (a), м/с²", yaxis_title="Күш (F), Ньютон", template="plotly_white")
+    st.plotly_chart(fig1, use_container_width=True)
+
+with col2:
+    st.subheader("Импульстің жылдамдыққа тәуелділігі P(v)")
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=v_range, y=P_range, name="P = mv", line=dict(color='darkblue', width=3)))
+    fig2.add_trace(go.Scatter(x=[vel_current], y=[P_current], mode="markers", 
+                              marker=dict(color="black", size=10), name="Қазіргі күй"))
+    fig2.update_layout(xaxis_title="Жылдамдық (v), м/с", yaxis_title="Импульс (P), кг·м/с", template="plotly_white")
+    st.plotly_chart(fig2, use_container_width=True)
+
+# 5. АНИМАЦИЯ (Күштің әсерінен қозғалыс)
+st.divider()
+st.subheader("🎬 Күш әсерінен дененің импульс алуы")
+st.write(f"Массасы {mass} кг денеге {F_current} Н күш әсер етіп жатыр.")
+
+# Анимация уақыты (5 секундтық қозғалыс)
+t_anim = np.linspace(0, 5, 50)
+# s = at^2 / 2 (бастапқы жылдамдық 0 деп алсақ)
+s_anim = (accel_current * t_anim**2) / 2
+
+fig_anim = go.Figure(
+    data=[go.Scatter(x=[0], y=[0], mode="markers", 
+                     marker=dict(symbol="square", size=mass*10 + 10, color="firebrick"))], 
+    layout=go.Layout(
+        xaxis=dict(range=[0, max(s_anim) + 5], title="Жүрілген жол (м)"),
+        yaxis=dict(range=[-1, 1], visible=False),
+        updatemenus=[dict(type="buttons", buttons=[dict(label="Күшті іске қосу", method="animate")])]
+    ),
+    frames=[go.Frame(data=[go.Scatter(x=[s_anim[i]], y=[0])]) for i in range(len(s_anim))]
+)
+
+st.plotly_chart(fig_anim, use_container_width=True)
+
+# 6. Нәтижелер панелі
+res1, res2 = st.columns(2)
+res1.metric("Әсер етуші Күш (F)", f"{F_current:.2f} Н")
+res2.metric("Дене импульсі (P)", f"{P_current:.2f} кг·м/с")
